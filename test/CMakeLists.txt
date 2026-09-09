@@ -76,10 +76,11 @@ if(YOVARIABLES_BUILD_SERVER)
       robotDataLogger/wire/cdr_buffer_test.cpp
       robotDataLogger/wire/lz4_block_test.cpp
       robotDataLogger/handshake/yo_variable_hand_shake_builder_test.cpp
+      robotDataLogger/http/http_server_test.cpp
    )
 
    add_executable(ihmc_robot_data_logger_tests ${IHMC_ROBOT_DATA_LOGGER_TEST_SOURCES})
-   target_link_libraries(ihmc_robot_data_logger_tests PRIVATE ihmc::robot_data_logger GTest::gtest_main Threads::Threads)
+   target_link_libraries(ihmc_robot_data_logger_tests PRIVATE ihmc::robot_data_logger asio_standalone GTest::gtest_main Threads::Threads)
 
    gtest_discover_tests(ihmc_robot_data_logger_tests)
 endif()

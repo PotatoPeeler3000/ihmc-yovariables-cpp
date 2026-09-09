@@ -13,6 +13,21 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(nlohmann_json)
 
+# Standalone (non-Boost) Asio - header-only, but ships no CMakeLists.txt of its own, so it's
+# wrapped in a small INTERFACE target here.
+FetchContent_Declare(
+   asio
+   GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
+   GIT_TAG asio-1-38-2
+)
+FetchContent_MakeAvailable(asio)
+
+add_library(asio_standalone INTERFACE)
+target_include_directories(asio_standalone INTERFACE ${asio_SOURCE_DIR}/asio/include)
+target_compile_definitions(asio_standalone INTERFACE ASIO_STANDALONE ASIO_NO_DEPRECATED)
+
+find_package(Threads REQUIRED)
+
 # Sources are added explicitly (no globbing), same convention as src/CMakeLists.txt, so CMake
 # always re-runs when a file is added rather than silently missing it.
 set(IHMC_ROBOT_DATA_LOGGER_SOURCES
@@ -20,6 +35,7 @@ set(IHMC_ROBOT_DATA_LOGGER_SOURCES
    wire/lz4_block.cpp
    handshake/json_serialization.cpp
    handshake/yo_variable_hand_shake_builder.cpp
+   http/http_server.cpp
 )
 
 add_library(ihmc_robot_data_logger ${IHMC_ROBOT_DATA_LOGGER_SOURCES})
@@ -31,5 +47,5 @@ target_include_directories(ihmc_robot_data_logger PUBLIC
 )
 
 target_compile_features(ihmc_robot_data_logger PUBLIC cxx_std_17)
-target_link_libraries(ihmc_robot_data_logger PUBLIC ihmc::yovariables nlohmann_json::nlohmann_json)
+target_link_libraries(ihmc_robot_data_logger PUBLIC ihmc::yovariables nlohmann_json::nlohmann_json asio_standalone Threads::Threads)
 target_link_libraries(ihmc_robot_data_logger PRIVATE lz4_vendored)
