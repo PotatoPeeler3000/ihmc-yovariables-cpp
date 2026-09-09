@@ -32,6 +32,14 @@ set(IHMC_YOVARIABLES_TEST_SOURCES
    buffer/key_points_handler_test.cpp
    buffer/yo_buffer_variable_entry_test.cpp
    buffer/yo_buffer_test.cpp
+   parameters/double_parameter_test.cpp
+   parameters/boolean_parameter_test.cpp
+   parameters/integer_parameter_test.cpp
+   parameters/long_parameter_test.cpp
+   parameters/enum_parameter_test.cpp
+   parameters/abstract_parameter_reader_test.cpp
+   parameters/default_parameter_reader_test.cpp
+   parameters/xml_parameter_io_test.cpp
 )
 
 find_package(Threads REQUIRED)

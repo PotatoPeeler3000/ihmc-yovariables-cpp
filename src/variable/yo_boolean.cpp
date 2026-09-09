@@ -1,7 +1,21 @@
 #include "ihmc/yovariables/variable/yo_boolean.h"
 
+#include <algorithm>
+#include <cctype>
+
 namespace ihmc::yovariables::variable
 {
+namespace
+{
+bool equalsIgnoreCaseTrue(const std::string& value)
+{
+   static const std::string kTrue = "true";
+   if (value.size() != kTrue.size())
+      return false;
+   return std::equal(value.begin(), value.end(), kTrue.begin(), [](unsigned char a, unsigned char b) { return std::tolower(a) == b; });
+}
+} // namespace
+
 YoBoolean::YoBoolean(const std::string& name, registry::YoRegistry* registry) : YoBoolean(name, "", registry)
 {
 }
@@ -76,7 +90,9 @@ std::string YoBoolean::getValueAsString(const std::optional<std::string>&) const
 
 bool YoBoolean::parseValue(const std::string& valueAsString, bool notifyListeners)
 {
-   return set(valueAsString == "true", notifyListeners);
+   // Matches Java's Boolean.parseBoolean(String): case-insensitive comparison to "true", anything
+   // else (including "TRUE"/"True" wasn't being matched before this fix) parses to false.
+   return set(equalsIgnoreCaseTrue(valueAsString), notifyListeners);
 }
 
 std::string YoBoolean::convertDoubleValueToString(const std::optional<std::string>&, double value) const
