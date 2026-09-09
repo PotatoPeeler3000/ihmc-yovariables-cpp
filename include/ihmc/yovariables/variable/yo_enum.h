@@ -5,6 +5,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <string>
+#include <typeinfo>
 #include <vector>
 
 #include <magic_enum/magic_enum.hpp>
@@ -146,6 +147,11 @@ public:
    const std::vector<std::string>& getEnumValuesAsString() const override
    {
       return enumValuesAsString_;
+   }
+
+   std::string getEnumTypeKey() const override
+   {
+      return typeid(E).name();
    }
 
    bool set(E value)

@@ -75,6 +75,7 @@ if(YOVARIABLES_BUILD_SERVER)
    set(IHMC_ROBOT_DATA_LOGGER_TEST_SOURCES
       robotDataLogger/wire/cdr_buffer_test.cpp
       robotDataLogger/wire/lz4_block_test.cpp
+      robotDataLogger/handshake/yo_variable_hand_shake_builder_test.cpp
    )
 
    add_executable(ihmc_robot_data_logger_tests ${IHMC_ROBOT_DATA_LOGGER_TEST_SOURCES})
