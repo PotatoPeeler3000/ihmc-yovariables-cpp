@@ -21,6 +21,7 @@ set(IHMC_YOVARIABLES_SOURCES
    tools/yo_search_tools.cpp
    registry/yo_namespace.cpp
    registry/yo_registry.cpp
+   registry/yo_variable_list.cpp
    variable/yo_variable.cpp
    variable/yo_boolean.cpp
    variable/yo_double.cpp

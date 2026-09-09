@@ -13,6 +13,12 @@ public:
    YoLong(const std::string& name, registry::YoRegistry* registry);
    YoLong(const std::string& name, const std::string& description, registry::YoRegistry* registry);
 
+   // Un-hide YoVariable's 1-arg convenience overloads: declaring the 2-arg virtuals below with the
+   // same names would otherwise hide all base overloads of those names, including these.
+   using YoVariable::setValueFromDouble;
+   using YoVariable::setValueFromLongBits;
+   using YoVariable::parseValue;
+
    void increment();
    void decrement();
    void add(std::int64_t value);

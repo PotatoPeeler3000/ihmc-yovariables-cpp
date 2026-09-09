@@ -16,6 +16,22 @@ set(IHMC_YOVARIABLES_TEST_SOURCES
    phase3_smoke_test.cpp
    phase4_smoke_test.cpp
    phase5_smoke_test.cpp
+   variable/yo_boolean_test.cpp
+   variable/yo_double_test.cpp
+   variable/yo_integer_test.cpp
+   variable/yo_long_test.cpp
+   variable/yo_enum_test.cpp
+   variable/yo_variable_test.cpp
+   registry/yo_namespace_test.cpp
+   registry/yo_factories_test.cpp
+   registry/yo_tools_test.cpp
+   registry/yo_registry_test.cpp
+   registry/yo_variable_list_test.cpp
+   registry/yo_variable_holder_implementation_test.cpp
+   registry/yo_variable_holder_implementation_new_test.cpp
+   buffer/key_points_handler_test.cpp
+   buffer/yo_buffer_variable_entry_test.cpp
+   buffer/yo_buffer_test.cpp
 )
 
 find_package(Threads REQUIRED)

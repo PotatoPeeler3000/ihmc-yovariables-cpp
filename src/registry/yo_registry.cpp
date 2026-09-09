@@ -170,7 +170,12 @@ void YoRegistry::removeVariable(variable::YoVariable* variable)
 
    variable->setRegistry(nullptr);
    variables_.erase(std::remove(variables_.begin(), variables_.end(), variable), variables_.end());
-   nameToVariableMap_.erase(it);
+   // Erase by key, not the iterator found above: setRegistry(nullptr) re-enters this method (it
+   // calls back into removeVariable while hasVariable(name) is still true), and that reentrant call
+   // already erases this same entry. Erasing by the now-invalidated iterator a second time here is
+   // undefined behavior; erasing by key is idempotent, matching Java's Map.remove(key) semantics
+   // that made the equivalent reentrant call harmless there.
+   nameToVariableMap_.erase(variableName);
 
    if (variable->isParameter())
    {

@@ -29,6 +29,12 @@ class YoEnum : public YoVariable, public providers::EnumProvider<E>
    static_assert(std::is_enum<E>::value, "E must be an enum type");
 
 public:
+   // Un-hide YoVariable's 1-arg convenience overloads: declaring the 2-arg virtuals below with the
+   // same names would otherwise hide all base overloads of those names, including these.
+   using YoVariable::setValueFromDouble;
+   using YoVariable::setValueFromLongBits;
+   using YoVariable::parseValue;
+
    static constexpr int NULL_VALUE = -1;
    static const std::string& nullValueString()
    {
