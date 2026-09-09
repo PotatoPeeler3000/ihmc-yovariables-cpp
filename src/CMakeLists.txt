@@ -19,6 +19,10 @@ set(IHMC_YOVARIABLES_SOURCES
    variable/yo_double.cpp
    variable/yo_integer.cpp
    variable/yo_long.cpp
+   buffer/yo_buffer_bounds.cpp
+   buffer/yo_buffer_variable_entry.cpp
+   buffer/key_points_handler.cpp
+   buffer/yo_buffer.cpp
 )
 
 add_library(ihmc_yovariables ${IHMC_YOVARIABLES_SOURCES})

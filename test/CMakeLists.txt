@@ -12,10 +12,13 @@ FetchContent_MakeAvailable(googletest)
 set(IHMC_YOVARIABLES_TEST_SOURCES
    version_test.cpp
    phase1_smoke_test.cpp
+   phase2_smoke_test.cpp
 )
 
+find_package(Threads REQUIRED)
+
 add_executable(ihmc_yovariables_tests ${IHMC_YOVARIABLES_TEST_SOURCES})
-target_link_libraries(ihmc_yovariables_tests PRIVATE ihmc::yovariables GTest::gtest_main)
+target_link_libraries(ihmc_yovariables_tests PRIVATE ihmc::yovariables GTest::gtest_main Threads::Threads)
 
 include(GoogleTest)
 gtest_discover_tests(ihmc_yovariables_tests)
