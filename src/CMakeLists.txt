@@ -47,6 +47,31 @@ set(IHMC_YOVARIABLES_SOURCES
    parameters/xml_parameter_writer.cpp
    tools/yo_geometry_name_tools.cpp
    tools/yo_factories.cpp
+   filters/alpha_filter_tools.cpp
+   filters/alpha_based_on_break_frequency_provider.cpp
+   filters/alpha_filtered_yo_variable.cpp
+   filters/alpha_filtered_wrapping_yo_variable.cpp
+   filters/alpha_beta_filtered_yo_variable.cpp
+   filters/acceleration_limited_yo_variable.cpp
+   filters/backlash_processing_yo_variable.cpp
+   filters/backlash_compensating_velocity_yo_variable.cpp
+   filters/butterworth_filtered_yo_variable.cpp
+   filters/deadbanded_yo_variable.cpp
+   filters/delayed_yo_boolean.cpp
+   filters/delayed_yo_double.cpp
+   filters/delta_limited_yo_variable.cpp
+   filters/filtered_finite_difference_yo_variable.cpp
+   filters/filtered_discrete_velocity_yo_variable.cpp
+   filters/first_order_filtered_yo_double.cpp
+   filters/first_order_band_pass_filtered_yo_double.cpp
+   filters/glitch_filtered_yo_boolean.cpp
+   filters/glitch_filtered_yo_integer.cpp
+   filters/jerk_limited_yo_double.cpp
+   filters/rate_limited_yo_variable.cpp
+   filters/running_average_yo_double.cpp
+   filters/second_order_filtered_yo_variable_parameters.cpp
+   filters/second_order_filtered_yo_double.cpp
+   filters/simple_moving_average_filtered_yo_variable.cpp
 )
 
 add_library(ihmc_yovariables ${IHMC_YOVARIABLES_SOURCES})

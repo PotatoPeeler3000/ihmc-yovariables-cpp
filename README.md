@@ -121,8 +121,49 @@ registries are appended to — making explicit what Java leaves implicit, withou
 tree built this way (unlike a one-off `duplicate()` call) is plausibly built once and kept for a program's
 whole lifetime.
 
-Next: any other main classes remaining — `listener/`/`exceptions/` are now fully covered by Phases 1-3, and
-`tools/` is fully covered by Phases 1 and 4, so what's left here is mainly the `ihmc-yovariables-filters`
-module (56 files, 2 touching EJML), not yet assigned to a phase.
+**Phase 5 done:** the `ihmc-yovariables-filters` Gradle module's non-Euclid, non-EJML classes - 28 files under
+`filters/` (`AlphaFilteredYoVariable`, `RateLimitedYoVariable`, `GlitchFilteredYoBoolean`,
+`SecondOrderFilteredYoDouble`, etc.; the full list is in `include/ihmc/yovariables/filters/`). Out of scope,
+per the same reasoning as `euclid/`/`YoMatrix` earlier: all 26 files under the module's `euclid/filters/`
+subpackage (they operate on Euclid-typed `YoFrame*` wrappers) and `filters/AlphaFilteredYoMatrix.java` (directly
+EJML-backed). One more file imported EJML's `DMatrixRMaj` without needing it - see below.
+
+Two structural issues came up repeatedly across this phase, both already established patterns from earlier
+phases, reapplied here at volume:
+
+- **Java's `new YoDouble(...)` factory helpers don't translate to a function returning a `YoVariable` by
+  value** (`YoVariable` and its subclasses are neither copyable nor movable, matching their non-owning-pointer
+  design from Phase 1). `VariableTools` - which Java uses to construct and return auxiliary YoVariables like a
+  filter's internal alpha or window-size variable - became naming-convention helper functions instead
+  (returning just the string name to use), with each filter class constructing its own auxiliary variables
+  directly as members. Where a filter needs to support *either* an internally-owned `YoDouble` *or* an
+  externally-provided `DoubleProvider` (both are common across this package, e.g. a fixed alpha value vs. an
+  external alpha provider), the field is a `DoubleProvider*` pointer alongside a `std::optional<YoDouble>` (or
+  `std::optional<ConstantDoubleProvider>`, a small new adapter class for wrapping a fixed double as a
+  `DoubleProvider`, C++'s equivalent of Java's `() -> dt` lambda) that the pointer points into when owned
+  internally.
+- **Trivial external-library calls needed local substitutes**, since none of `us.ihmc.commons.{AngleTools,
+  MathTools}`, `us.ihmc.euclid.tools.EuclidCoreTools`, or `us.ihmc.commons.DeadbandTools` are part of
+  ihmc-yovariables (and so aren't otherwise being ported): a new `filters/filter_math.h` provides `clamp`,
+  `interpolate`, `angleDifferenceMinusPiToPi`, and `applyDeadband` equivalents. `applyDeadband` in particular
+  is a best-effort standard implementation, not a verified port, since `DeadbandTools`'s actual source wasn't
+  available to check against.
+
+`SimpleMovingAverageFilteredYoVariable` imports EJML's `DMatrixRMaj` but only ever uses it as a resizable
+single-column buffer (`.get(i,0)`/`.set(i,0,v)`/`.reshape(n,1)`, no actual matrix math), so it didn't need
+excluding alongside `AlphaFilteredYoMatrix` - it's ported using `std::vector<double>` instead. One behavioral
+adaptation there: Java's `reset()` calls EJML's `reshape()`, whose exact retained-values-on-resize behavior is
+underdocumented/implementation-specific; this port always zero-fills on reset (arguably more correct for a
+filter reset than relying on that ambiguity, but worth knowing about).
+
+One deliberately-not-virtual fidelity gap: `GlitchFilteredYoBoolean`/`GlitchFilteredYoInteger` override
+`YoBoolean::set`/`YoInteger::set`, which are ordinary (non-virtual) methods in this port (Phase 1 didn't make
+them virtual, matching that no other Phase 1-4 code needed it). Java's universal virtual dispatch means this
+override is transparent regardless of the reference's static type; here, calling `set()` through a base
+`YoBoolean&`/`YoInteger&` reference to one of these bypasses the glitch-filtering logic. Calling it through the
+concrete `GlitchFilteredYo*` type (the normal way these are used) is unaffected.
+
+`ihmc-yovariables-filters` also has 2 EJML-touching files skipped above and 26 Euclid-dependent files under
+`euclid/filters/`, both permanently out of scope per the standing Euclid/EJML exclusions.
 
 Not yet started: unit tests (mechanical GoogleTest port of the existing JUnit suite).
