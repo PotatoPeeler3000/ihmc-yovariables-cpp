@@ -45,6 +45,8 @@ set(IHMC_YOVARIABLES_SOURCES
    parameters/xml/parameters.cpp
    parameters/xml_parameter_reader.cpp
    parameters/xml_parameter_writer.cpp
+   tools/yo_geometry_name_tools.cpp
+   tools/yo_factories.cpp
 )
 
 add_library(ihmc_yovariables ${IHMC_YOVARIABLES_SOURCES})

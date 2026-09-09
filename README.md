@@ -107,9 +107,22 @@ and got fixed while building this, both worth knowing about:
 Also added while here: `YoEnum<E>::getEnumValues()`, missed in Phase 1 (Java has it; only
 `getEnumValuesAsString()` had been ported).
 
-Next: any other main classes remaining — `listener/`/`exceptions/` are now fully covered by Phases 1-3, so what's
-left here is mainly the `ihmc-yovariables-filters` module (56 files, 2 touching EJML), not yet assigned to a
-phase.
+**Phase 4 done:** the rest of `tools/` — `YoFactories`, `YoGeometryNameTools`, and the diagnostic-printing
+pieces of `YoTools` (`printStatistics`, `getRegistryInfo`, `toShortName`) that Phase 1 deferred.
+`YoGeometryNameTools` turned out not to need excluding despite importing Euclid types: those imports are for
+javadoc `@link`s only, never touched by any actual method signature.
 
-Not yet started: utilities/helpers (`tools/` diagnostics), unit tests (mechanical GoogleTest port of the
-existing JUnit suite).
+`YoFactories::findOrCreateRegistry`/`createChainOfRegistries` needed the same kind of ownership adaptation as
+`duplicate()` in Phase 3, for the same underlying reason: they can create new `YoRegistry`s that Java keeps
+alive implicitly (reachable from the tree, via GC) with no explicit owner anywhere. Rather than leaking (as
+Phase 3's `duplicate()` does, since that's a rarely-called leaf capability), these take an explicit
+`std::vector<std::unique_ptr<YoRegistry>>& newRegistriesOwnershipSink` output parameter that any newly created
+registries are appended to — making explicit what Java leaves implicit, without leaking, since a registry
+tree built this way (unlike a one-off `duplicate()` call) is plausibly built once and kept for a program's
+whole lifetime.
+
+Next: any other main classes remaining — `listener/`/`exceptions/` are now fully covered by Phases 1-3, and
+`tools/` is fully covered by Phases 1 and 4, so what's left here is mainly the `ihmc-yovariables-filters`
+module (56 files, 2 touching EJML), not yet assigned to a phase.
+
+Not yet started: unit tests (mechanical GoogleTest port of the existing JUnit suite).

@@ -1,9 +1,13 @@
 #include "ihmc/yovariables/tools/yo_tools.h"
 
+#include <algorithm>
+#include <iostream>
 #include <unordered_set>
 
 #include "ihmc/yovariables/exceptions/illegal_name_exception.h"
 #include "ihmc/yovariables/registry/yo_namespace.h"
+#include "ihmc/yovariables/registry/yo_registry.h"
+#include "ihmc/yovariables/tools/yo_search_tools.h"
 
 namespace ihmc::yovariables::tools
 {
@@ -119,5 +123,77 @@ registry::YoNamespace concatenate(const std::string& nameA, const std::string& n
    subNames.insert(subNames.end(), subNamesA.begin(), subNamesA.end());
    subNames.insert(subNames.end(), subNamesB.begin(), subNamesB.end());
    return registry::YoNamespace(std::move(subNames));
+}
+
+std::string toShortName(const std::string& name)
+{
+   std::size_t separatorIndex = name.rfind(kNamespaceSeparator);
+   if (separatorIndex == std::string::npos)
+      return name;
+   return name.substr(separatorIndex + 1);
+}
+
+namespace
+{
+/** Truncates original to length (appending placeholder) if too long, else right-pads with spaces. */
+std::string trimOrPadToLength(const std::string& original, int length, const std::string& placeholder)
+{
+   if (static_cast<int>(original.size()) > length)
+      return original.substr(0, length - static_cast<int>(placeholder.size())) + placeholder;
+
+   std::string padded = original;
+   padded.resize(static_cast<std::size_t>(length), ' ');
+   return padded;
+}
+} // namespace
+
+std::string getRegistryInfo(const registry::YoRegistry& registry, int maxNameLength)
+{
+   int variables = static_cast<int>(registry.getNumberOfVariables());
+   int children = static_cast<int>(registry.getChildRegistries().size());
+   constexpr int maxPropertyLength = 17; // "Variables: " is 11 chars, leaving 6 for the integer.
+
+   std::string variableString = trimOrPadToLength("Variables: " + std::to_string(variables), maxPropertyLength, "...");
+   std::string childrenString = trimOrPadToLength("Children: " + std::to_string(children), maxPropertyLength, "...");
+
+   // "YoRegistry", not a reflective class name: nothing in this port subclasses YoRegistry.
+   std::string name = trimOrPadToLength("YoRegistry " + registry.getNamespace().getName(), maxNameLength, "...");
+
+   return name + "\t" + variableString + "\t" + childrenString;
+}
+
+void printStatistics(const std::function<bool(const registry::YoRegistry&)>& filter, registry::YoRegistry& root,
+                      const std::function<std::string(const registry::YoRegistry&)>& registryInfoFunction, std::ostream& printStream)
+{
+   std::vector<registry::YoRegistry*> registriesOfInterest =
+      filterRegistries([&filter](registry::YoRegistry* candidate) { return filter(*candidate); }, root);
+
+   std::sort(registriesOfInterest.begin(), registriesOfInterest.end(), [](registry::YoRegistry* a, registry::YoRegistry* b) {
+      return a->getNumberOfVariables() > b->getNumberOfVariables();
+   });
+
+   printStream << "YoTools: Printing descendants of " << root.getName() << " registry.\n";
+   printStream << "Total number of variables: " << root.getNumberOfVariablesDeep() << "\n";
+   printStream << "Sorting by number of variables.\n";
+   for (registry::YoRegistry* registryOfInterest : registriesOfInterest)
+      printStream << registryInfoFunction(*registryOfInterest) << "\n";
+}
+
+void printStatistics(int minVariablesToPrint, int minChildrenToPrint, registry::YoRegistry& root,
+                      const std::function<std::string(const registry::YoRegistry&)>& registryInfoFunction, std::ostream& printStream)
+{
+   printStatistics(
+      [minVariablesToPrint, minChildrenToPrint](const registry::YoRegistry& candidate) {
+         return static_cast<int>(candidate.getNumberOfVariables()) >= minVariablesToPrint
+                || static_cast<int>(candidate.getChildRegistries().size()) >= minChildrenToPrint;
+      },
+      root,
+      registryInfoFunction,
+      printStream);
+}
+
+void printStatistics(int minVariablesToPrint, int minChildrenToPrint, registry::YoRegistry& root)
+{
+   printStatistics(minVariablesToPrint, minChildrenToPrint, root, [](const registry::YoRegistry& r) { return getRegistryInfo(r); }, std::cout);
 }
 }
