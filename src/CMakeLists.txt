@@ -1,7 +1,24 @@
+include(FetchContent)
+FetchContent_Declare(
+   magic_enum
+   GIT_REPOSITORY https://github.com/Neargye/magic_enum.git
+   GIT_TAG v0.9.7
+)
+FetchContent_MakeAvailable(magic_enum)
+
 # Sources are added explicitly (no globbing) as each port phase lands, so CMake always
 # re-runs when a file is added rather than silently missing it.
 set(IHMC_YOVARIABLES_SOURCES
    version.cpp
+   tools/yo_tools.cpp
+   tools/yo_search_tools.cpp
+   registry/yo_namespace.cpp
+   registry/yo_registry.cpp
+   variable/yo_variable.cpp
+   variable/yo_boolean.cpp
+   variable/yo_double.cpp
+   variable/yo_integer.cpp
+   variable/yo_long.cpp
 )
 
 add_library(ihmc_yovariables ${IHMC_YOVARIABLES_SOURCES})
@@ -13,3 +30,4 @@ target_include_directories(ihmc_yovariables PUBLIC
 )
 
 target_compile_features(ihmc_yovariables PUBLIC cxx_std_17)
+target_link_libraries(ihmc_yovariables PUBLIC magic_enum::magic_enum)

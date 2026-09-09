@@ -32,4 +32,22 @@ ctest --test-dir build
 
 ## Status
 
-Ported so far: nothing yet — repo scaffold only. See the port plan for phase ordering.
+**Phase 1 done:** variable types (`YoBoolean`, `YoDouble`, `YoInteger`, `YoLong`, `YoEnum<E>`), the 5
+provider interfaces, `YoRegistry`/`YoNamespace`/`YoVariableHolder`, the listener and exception types, and
+the subset of `YoTools`/`YoSearchTools` those depend on.
+
+`YoRegistry` was folded into this phase alongside `YoVariable` (rather than the originally planned
+"types + YoVariable" / "buffer + registry" split) because they're a genuine circular pair in the Java
+source: `YoVariable.setRegistry()` calls back into `YoRegistry`'s methods directly. `YoBuffer` has no such
+cycle - it only touches `YoVariable` through its already-abstract interface - so it remains its own,
+separable next phase.
+
+Known fidelity gaps from this phase, called out for when they start to matter: `YoDouble`'s
+`getValueAsString()`/`toString()` use `std::to_string`/`snprintf` rather than reproducing Java's
+`Double.toString()`/`Formatter` rules exactly; `YoEnum<E>::getValue()` throws when the current value is
+null (Java can return a null reference there) - use `getEnumValueOrNull()` for the nullable form; and
+`YoTools`'s diagnostic-printing helpers (`printStatistics`/`getRegistryInfo`) are deferred to the
+utilities phase, along with the `parameters`-list bookkeeping in `YoRegistry` (present and correct, but
+inert until `YoParameter` exists to override `isParameter()`/`getParameter()`).
+
+Next: `YoBuffer` (`YoBufferBounds`, `YoBufferVariableEntry`, `YoBuffer`, `KeyPointsHandler`).

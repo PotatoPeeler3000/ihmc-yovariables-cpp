@@ -11,6 +11,7 @@ FetchContent_MakeAvailable(googletest)
 # Test sources are added explicitly, one line per ported JUnit test class, as each lands.
 set(IHMC_YOVARIABLES_TEST_SOURCES
    version_test.cpp
+   phase1_smoke_test.cpp
 )
 
 add_executable(ihmc_yovariables_tests ${IHMC_YOVARIABLES_TEST_SOURCES})
