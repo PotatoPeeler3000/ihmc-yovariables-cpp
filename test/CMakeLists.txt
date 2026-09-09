@@ -67,3 +67,18 @@ target_link_libraries(ihmc_yovariables_tests PRIVATE ihmc::yovariables GTest::gt
 
 include(GoogleTest)
 gtest_discover_tests(ihmc_yovariables_tests)
+
+# Kept as a separate test executable/target (mirroring ihmc_robot_data_logger being a separate
+# library target from ihmc_yovariables) so the core value-library tests never link the networking
+# stack (Asio/OpenSSL/lz4).
+if(YOVARIABLES_BUILD_SERVER)
+   set(IHMC_ROBOT_DATA_LOGGER_TEST_SOURCES
+      robotDataLogger/wire/cdr_buffer_test.cpp
+      robotDataLogger/wire/lz4_block_test.cpp
+   )
+
+   add_executable(ihmc_robot_data_logger_tests ${IHMC_ROBOT_DATA_LOGGER_TEST_SOURCES})
+   target_link_libraries(ihmc_robot_data_logger_tests PRIVATE ihmc::robot_data_logger GTest::gtest_main Threads::Threads)
+
+   gtest_discover_tests(ihmc_robot_data_logger_tests)
+endif()

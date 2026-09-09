@@ -10,8 +10,13 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 option(YOVARIABLES_BUILD_TESTS "Build unit tests" ON)
+option(YOVARIABLES_BUILD_SERVER "Build the YoVariableServer networking library (ihmc_robot_data_logger)" ON)
 
 add_subdirectory(src)
+
+if(YOVARIABLES_BUILD_SERVER)
+   add_subdirectory(src/robotDataLogger)
+endif()
 
 if(YOVARIABLES_BUILD_TESTS)
    enable_testing()

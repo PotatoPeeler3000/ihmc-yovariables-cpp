@@ -10,6 +10,7 @@
 #include <magic_enum/magic_enum.hpp>
 
 #include "ihmc/yovariables/providers/enum_provider.h"
+#include "ihmc/yovariables/variable/yo_enum_holder.h"
 #include "ihmc/yovariables/variable/yo_variable.h"
 
 namespace ihmc::yovariables::variable
@@ -24,7 +25,7 @@ namespace ihmc::yovariables::variable
  * @tparam E the enum type used with this variable.
  */
 template <typename E>
-class YoEnum : public YoVariable, public providers::EnumProvider<E>
+class YoEnum : public YoVariable, public providers::EnumProvider<E>, public YoEnumHolder
 {
    static_assert(std::is_enum<E>::value, "E must be an enum type");
 
@@ -91,12 +92,12 @@ public:
    }
 
    /** True if this variable was constructed from a real enum type E (see isBackedByEnum()). */
-   bool isBackedByEnum() const
+   bool isBackedByEnum() const override
    {
       return isBackedByEnum_;
    }
 
-   bool isNullAllowed() const
+   bool isNullAllowed() const override
    {
       return allowNullValue_;
    }
@@ -142,7 +143,7 @@ public:
       return enumValues_;
    }
 
-   const std::vector<std::string>& getEnumValuesAsString() const
+   const std::vector<std::string>& getEnumValuesAsString() const override
    {
       return enumValuesAsString_;
    }
@@ -162,7 +163,7 @@ public:
       return set(value.has_value() ? static_cast<int>(*value) : NULL_VALUE, notifyListeners);
    }
 
-   int getOrdinal() const
+   int getOrdinal() const override
    {
       return valueOrdinal_;
    }
