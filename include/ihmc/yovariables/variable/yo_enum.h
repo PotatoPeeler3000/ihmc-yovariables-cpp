@@ -129,6 +129,13 @@ public:
       return *value;
    }
 
+   /** @throws std::logic_error if not backed by an enum type (see isBackedByEnum()). */
+   const std::vector<E>& getEnumValues() const
+   {
+      checkIfBackedByEnum();
+      return enumValues_;
+   }
+
    const std::vector<std::string>& getEnumValuesAsString() const
    {
       return enumValuesAsString_;

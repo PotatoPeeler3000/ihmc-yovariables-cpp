@@ -13,6 +13,7 @@ set(IHMC_YOVARIABLES_TEST_SOURCES
    version_test.cpp
    phase1_smoke_test.cpp
    phase2_smoke_test.cpp
+   phase3_smoke_test.cpp
 )
 
 find_package(Threads REQUIRED)

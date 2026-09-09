@@ -76,9 +76,40 @@ covariantly overrides its interface's return type (`YoBufferVariableEntry*` for 
 using plain C++ pointer covariance, unlike `YoRegistry::getChildren()`'s container-covariance workaround in
 Phase 1.
 
-Next: any other main classes (`parameters/`, `listener/` remainder, `exceptions/` remainder) — flagging again
-that the Java build also has a separate `ihmc-yovariables-filters` module (56 files, 2 touching EJML) not yet
-assigned to a phase.
+**Phase 3 done:** `parameters/` in full — `YoParameter` and the 5 concrete types (`BooleanParameter`,
+`DoubleParameter`, `IntegerParameter`, `LongParameter`, `EnumParameter<E>`), `ParameterData`,
+`AbstractParameterReader`/`Writer`, `DefaultParameterReader`, `SingleParameterReader`, `XmlParameterReader`/
+`Writer` (via [pugixml](https://github.com/zeux/pugixml), FetchContent'd like magic_enum), the `parameters/xml`
+token classes, and `YoParameterChangedListener`.
+
+Each concrete parameter type mirrors the Java source's private-inner-class pattern (e.g. `BooleanParameter`'s
+`YoBooleanParameter extends YoBoolean`) as an explicit nested `BackingVariable` holding a back-reference to its
+owning parameter, since C++ has no implicit outer-instance pointer for nested classes. Two real bugs surfaced
+and got fixed while building this, both worth knowing about:
+
+- **Virtual dispatch during base-class construction.** `BackingVariable`'s constructor used to pass the real
+  registry straight to its `YoBoolean`/`YoDouble`/etc. base constructor, which registers with the registry and
+  triggers calls to `isParameter()`/`getParameter()`. In Java that already dispatches to the most-derived
+  override during construction; in C++, a base class subobject under construction dispatches virtuals using its
+  *own* vtable, not the eventually-most-derived one — so these calls silently resolved to `YoVariable`'s
+  un-overridden defaults, and no parameter ever made it into `YoRegistry::parameters_`. Fixed by passing
+  `nullptr` to the base constructor and calling `setRegistry(registry)` from `BackingVariable`'s own constructor
+  *body*, after the derived vtable is active.
+- **`duplicate()`'s ownership.** `YoVariable::duplicate()` returns `std::unique_ptr<YoVariable>`, but a
+  duplicated parameter's returned variable and its new "shell" parameter object are supposed to be able to
+  reference each other indefinitely (`getParameter()` on the former still working) — a relationship Java
+  expresses for free via GC and a fixed single-owner `unique_ptr` return type cannot express directly. Resolved
+  by deliberately leaking the shell (documented at each call site): the shell is never deleted, so its own
+  `value_` member's destructor never runs, and the `unique_ptr` handed back to the caller remains the only thing
+  that will ever actually free the backing variable. `duplicate()` is not on any hot path, so a bounded one-shell
+  leak per call was judged preferable to a wider interface change or unsafe shared ownership.
+
+Also added while here: `YoEnum<E>::getEnumValues()`, missed in Phase 1 (Java has it; only
+`getEnumValuesAsString()` had been ported).
+
+Next: any other main classes remaining — `listener/`/`exceptions/` are now fully covered by Phases 1-3, so what's
+left here is mainly the `ihmc-yovariables-filters` module (56 files, 2 touching EJML), not yet assigned to a
+phase.
 
 Not yet started: utilities/helpers (`tools/` diagnostics), unit tests (mechanical GoogleTest port of the
 existing JUnit suite).
