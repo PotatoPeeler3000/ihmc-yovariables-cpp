@@ -166,4 +166,61 @@ concrete `GlitchFilteredYo*` type (the normal way these are used) is unaffected.
 `ihmc-yovariables-filters` also has 2 EJML-touching files skipped above and 26 Euclid-dependent files under
 `euclid/filters/`, both permanently out of scope per the standing Euclid/EJML exclusions.
 
+**Phase 6 done:** a mechanical GoogleTest port of the JUnit test suite, across all five directories it lives
+in - `variable/` (6 files), `registry/` (7 files), `buffer/` (3 files, skipping
+`YoBufferVariableEntryConcurrencyBenchmark`, a benchmark rather than a test), `parameters/` (8 files), and
+`filters/` (18 files) - 385 tests total, all passing. The point of doing this mechanically rather than
+selectively was exactly realized: three genuine bugs in earlier phases' production code surfaced purely from
+porting tests that happened to exercise paths the phases' own smoke tests hadn't:
+
+- **C++ name-hiding**: `YoBoolean`/`YoDouble`/`YoInteger`/`YoLong`/`YoEnum<E>` each declare a 2-arg
+  `setValueFromDouble(double, bool)`/`setValueFromLongBits(int64_t, bool)`/`parseValue(string, bool)`
+  override, which - per ordinary C++ name lookup, unlike Java's flat virtual dispatch - hides *all* base-class
+  overloads of that name from the derived class's public interface, including `YoVariable`'s 1-arg convenience
+  overloads. Fixed with `using YoVariable::setValueFromDouble;` (etc.) in each of the 5 classes.
+- **`YoRegistry::removeVariable` segfault**: calling it directly on a variable actually registered there (as
+  opposed to indirectly via `YoVariable::setRegistry(nullptr)`, the usual path) crashed. `setRegistry(nullptr)`
+  re-enters `removeVariable` while the entry is still present, and that reentrant call erases
+  `nameToVariableMap_`'s entry; the outer call then reused its now-invalidated iterator to erase the same entry
+  again. Fixed by erasing by key instead, which - like Java's `Map.remove(key)`, the reason the equivalent
+  reentrancy is harmless there - is idempotent.
+- **`YoBoolean::parseValue` case sensitivity**: it compared the input string to `"true"` with `==`, so loading
+  `"TRUE"` or `"True"` silently produced `false`. Java's equivalent uses `Boolean.parseBoolean`, documented
+  case-insensitive. Fixed with a case-insensitive comparison.
+
+Also discovered this way: `YoVariableList` (in the `registry` package) had never been carried over by Phases
+1-5 - a real gap, not a test-only omission - and is now ported as production code
+(`registry/yo_variable_list.h`/`.cpp`) rather than stubbed just for its test file.
+
+Recurring adaptations, each commented in place at the specific test that needed them rather than applied
+uniformly:
+
+- Nullable-enum divergence (`YoEnum<E>::getEnumValue()` throws on a null current value rather than Java's
+  nullable return, per Phase 1) shows up again in `EnumParameterTest`; the fix is the same - go through
+  `getEnumValueOrNull()` on the backing variable instead of the parameter's own `getValue()`.
+  `YoEnumTest.testEmptyConstantList`'s enum-backed half isn't ported: magic_enum can't reflect a genuinely
+  empty enum (it needs at least one enumerator to calibrate the value range it probes), a real, previously
+  unexercised capability gap against Java (which allows a zero-constant enum fine).
+- A handful of tests exercise something with no C++ equivalent and are dropped with an explanatory comment
+  rather than faked: reflection-only assertions (`YoVariableTest.testRecursiveCompareYoVariables`,
+  `YoEnumTest.testGetEnumType`), a null-array-element case (`std::string` has no null state, unlike
+  `String[]`), and several `catch (NullPointerException)` patterns where the Java code deliberately
+  dereferences a null reference - not reproducible in C++ without undefined behavior.
+- `YoBufferVariableEntry::writeBufferAt` is fully private in this port (Java's is package-private, reachable
+  from the same-package test) - tests that used it directly now go through the public `writeIntoBufferAt` after
+  setting the backing variable's value, which reaches the same buffer state.
+- Where a Java test's tolerance implicitly relied on `Double.toString()`'s exact-round-trip guarantee (no
+  delta, or `Double.MIN_VALUE`), the C++ equivalent constructs its input strings with enough precision (17
+  significant digits, not `std::to_string`'s default 6) to round-trip exactly instead - `std::to_string` is a
+  real, already-documented (Phase 1-4) formatting divergence, not something to fix here, just something the
+  test's own string construction has to route around.
+- `java.util.Random` usage ported to `std::mt19937`/`std::mt19937_64` with a fixed seed throughout, including
+  the handful of Java tests that used an *unseeded* `Random()` - every assertion in this suite checks
+  self-consistency or a statistical property, never a value tied to a specific seed's exact sequence, so a
+  fixed seed changes nothing being tested and makes the C++ side strictly more reproducible.
+- A few tests reach into package-private fields Java's access control permitted from a same-package test class
+  (`GlitchFilteredYoBooleanTest.testCounter`'s direct read of the `counter` field) that this port made fully
+  private with no accessor; these are dropped rather than approximated, since there's no public-API proxy that
+  observes the same internal state precisely.
+
 Not yet started: unit tests (mechanical GoogleTest port of the existing JUnit suite).

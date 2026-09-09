@@ -40,6 +40,24 @@ set(IHMC_YOVARIABLES_TEST_SOURCES
    parameters/abstract_parameter_reader_test.cpp
    parameters/default_parameter_reader_test.cpp
    parameters/xml_parameter_io_test.cpp
+   filters/alpha_filtered_yo_variable_test.cpp
+   filters/alpha_beta_filtered_yo_variable_test.cpp
+   filters/alpha_filtered_wrapping_yo_variable_test.cpp
+   filters/backlash_processing_yo_variable_test.cpp
+   filters/backlash_compensating_velocity_yo_variable_test.cpp
+   filters/butterworth_filtered_yo_variable_test.cpp
+   filters/deadbanded_yo_variable_test.cpp
+   filters/delayed_yo_boolean_test.cpp
+   filters/delayed_yo_double_test.cpp
+   filters/delta_limited_yo_variable_test.cpp
+   filters/filtered_discrete_velocity_yo_variable_test.cpp
+   filters/filtered_velocity_yo_variable_test.cpp
+   filters/first_order_filtered_yo_double_test.cpp
+   filters/glitch_filtered_yo_boolean_test.cpp
+   filters/rate_limited_yo_variable_test.cpp
+   filters/running_average_yo_double_test.cpp
+   filters/second_order_filtered_yo_double_test.cpp
+   filters/simple_moving_average_filtered_yo_variable_test.cpp
 )
 
 find_package(Threads REQUIRED)
