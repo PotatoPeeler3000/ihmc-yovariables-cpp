@@ -11,11 +11,16 @@ endif()
 
 option(YOVARIABLES_BUILD_TESTS "Build unit tests" ON)
 option(YOVARIABLES_BUILD_SERVER "Build the YoVariableServer networking library (ihmc_robot_data_logger)" ON)
+option(YOVARIABLES_BUILD_EXAMPLES "Build runnable examples (requires YOVARIABLES_BUILD_SERVER)" ON)
 
 add_subdirectory(src)
 
 if(YOVARIABLES_BUILD_SERVER)
    add_subdirectory(src/robotDataLogger)
+
+   if(YOVARIABLES_BUILD_EXAMPLES)
+      add_subdirectory(examples)
+   endif()
 endif()
 
 if(YOVARIABLES_BUILD_TESTS)

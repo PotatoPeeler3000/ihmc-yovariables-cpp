@@ -223,4 +223,63 @@ uniformly:
   private with no accessor; these are dropped rather than approximated, since there's no public-API proxy that
   observes the same internal state precisely.
 
+**Server Phases 1-4 done (branch `feature/yovariable-server`):** a C++ `YoVariableServer`
+(`include/ihmc/robotDataLogger/`, new `ihmc_robot_data_logger` library target), wire-compatible with the real,
+unmodified Java `YoVariableClient` from `ihmc-robot-data-logger` - not a port of `us.ihmc.yoVariables.*` like
+everything above, but a from-scratch C++ implementation of `us.ihmc.robotDataLogger`'s network protocol (HTTP +
+WebSocket + a hand-rolled CDR encoding + LZ4 block compression), verified byte-for-byte against that protocol's
+actual Java source rather than reimplemented from a general description of it:
+
+- **Phase 1 (`wire/`)**: `CDRBuffer` - the alignment/payload-header/endianness subset `CustomLogDataPublisherType`
+  and `VariableChangeRequest` actually use - and vendored LZ4 (`third_party/lz4`, block API, not the frame
+  format, to match `net.jpountz.lz4.LZ4Compressor`'s wire format).
+- **Phase 2 (`handshake/`)**: `YoVariableHandShakeBuilder` replicates Java's exact registry-ID DFS numbering
+  (ID 0 reserved for a synthetic root, real registries start at 1, a registry's own variables precede its
+  children) and produces JSON matching `ROS2JSONSerializer`'s shape (root-wrapped under
+  `"us::ihmc::robotDataLogger::<Type>"`, `YoType`/`LoadStatus` as enum-name strings) for `/handshake.json`.
+- **Phase 3 (`http/`)**: a minimal HTTP/1.1 server (standalone Asio) covering exactly `/announcement.json`,
+  `/handshake.json`, and the `/websocket` upgrade handoff - not a general-purpose HTTP library, since the real
+  client only ever requests these fixed endpoints.
+- **Phase 4 (`websocket/`, `yo_variable_server.*`)**: RFC6455 handshake/framing, `RegistrySendBuffer` +
+  `encodeLogDataFrame`/`decodeLogDataFrame` (the `CustomLogDataPublisherType` equivalent), and the
+  `YoVariableServer` public class itself (`setMainRegistry()`/`start()`/`update()`/`close()`, matching Java's
+  shape).
+
+**Verified against the real Java client, not just self-consistency**: `examples/simple_server_example.cpp`
+publishes a `YoDouble`/`YoInteger`/`YoBoolean`/`YoLong`/`YoEnum` registry; a temporary harness using the actual
+`us.ihmc.robotDataLogger.YoVariableClient` (built from the sibling `ihmc-robot-data-logger` checkout, no
+modifications) connected to it over `localhost:8008` and received correct, internally-consistent live values
+(e.g. `bigCounter` exactly `1000x` `counter` in every sample, `color`'s ordinal matching `counter % 3`), then
+correctly detected disconnection when the C++ server shut down. This is the only test in the whole port that
+actually crosses the C++/Java boundary; `YoVariableServerTest.testFullProtocolSelfRoundTrip` covers the same
+path with a hand-rolled C++ client for fast, repeatable CI-style verification.
+
+Real bugs found (both from concurrent close()/shutdown() races, not from the wire-format work itself - the wire
+format bugs, like the alignment pad this surfaced between `CustomLogDataPublisherType`'s `type` and `registry`
+fields, were caught and documented while implementing Phase 1, before any test ran green against a wrong
+assumption):
+
+- **`HttpServer`/`WebSocketConnection` UAF**: a detached per-connection thread could outlive its owning object,
+  so a client that stayed connected past `stop()`/the destructor caused a use-after-free. Fixed by tracking every
+  connection and joining its thread before `stop()` returns.
+- **Closing a socket concurrently with another thread's in-flight `poll()` on the same fd is racy on macOS**
+  (confirmed by sampling a hung test process mid-`poll()`): sometimes the close is observed, sometimes the poll
+  never returns. Fixed by `shutdown(SHUT_RDWR)`-ing to unblock the read, then only actually `close()`-ing once
+  that thread has been joined (via the last `shared_ptr<socket>` reference going away), so nothing is still
+  polling the fd when it's closed.
+
+Explicitly deferred scope, all documented in code where the gap is, not silently dropped: joints, YoGraphics,
+`Summary`, `ReferenceFrameInformation` (handshake always emits Java-spec-correct empty/default values for
+these); `/model.sdf`/`/resources.zip` (server always reports `hasModel=false`, which the real client already
+special-cases to skip fetching them); inbound `VariableChangeRequest` handling, the `SEND_TIMESTAMPS`/UDP
+timestamp channel, the text command/echo protocol, UDP multicast autodiscovery, disk logging, and a real
+`reconnectKey` (stubbed - breaks `reconnect()` only, not first connect, since the client never validates it
+before then).
+
+Dependency note: the plan called for system OpenSSL for SHA-1 (WebSocket handshake) - dropped after
+`find_package(OpenSSL)` failed on the dev machine (Homebrew's `openssl@3` is keg-only, not discoverable without
+an extra CMake hint that can't be assumed on every machine). Vendored a small public-domain SHA-1 implementation
+instead (`third_party/sha1`), consistent with how LZ4 is already vendored - the whole build now has zero system
+package prerequisites, only `FetchContent`/vendored dependencies.
+
 Not yet started: unit tests (mechanical GoogleTest port of the existing JUnit suite).

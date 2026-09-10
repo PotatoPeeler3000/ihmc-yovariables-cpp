@@ -1,0 +1,2 @@
+add_executable(simple_server_example simple_server_example.cpp)
+target_link_libraries(simple_server_example PRIVATE ihmc::robot_data_logger)
