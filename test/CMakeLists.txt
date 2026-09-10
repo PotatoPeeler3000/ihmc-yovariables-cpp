@@ -77,6 +77,11 @@ if(YOVARIABLES_BUILD_SERVER)
       robotDataLogger/wire/lz4_block_test.cpp
       robotDataLogger/handshake/yo_variable_hand_shake_builder_test.cpp
       robotDataLogger/http/http_server_test.cpp
+      robotDataLogger/websocket/base64_test.cpp
+      robotDataLogger/websocket/websocket_handshake_test.cpp
+      robotDataLogger/websocket/websocket_frame_test.cpp
+      robotDataLogger/custom_log_data_publisher_test.cpp
+      robotDataLogger/yo_variable_server_test.cpp
    )
 
    add_executable(ihmc_robot_data_logger_tests ${IHMC_ROBOT_DATA_LOGGER_TEST_SOURCES})

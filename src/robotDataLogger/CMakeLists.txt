@@ -28,6 +28,11 @@ target_compile_definitions(asio_standalone INTERFACE ASIO_STANDALONE ASIO_NO_DEP
 
 find_package(Threads REQUIRED)
 
+# sha1.hpp (vendored under third_party/sha1, public domain - see the notice in the file itself),
+# used only for the RFC6455 WebSocket handshake's Sec-WebSocket-Accept computation.
+add_library(sha1_vendored INTERFACE)
+target_include_directories(sha1_vendored INTERFACE ${CMAKE_SOURCE_DIR}/third_party/sha1)
+
 # Sources are added explicitly (no globbing), same convention as src/CMakeLists.txt, so CMake
 # always re-runs when a file is added rather than silently missing it.
 set(IHMC_ROBOT_DATA_LOGGER_SOURCES
@@ -36,6 +41,13 @@ set(IHMC_ROBOT_DATA_LOGGER_SOURCES
    handshake/json_serialization.cpp
    handshake/yo_variable_hand_shake_builder.cpp
    http/http_server.cpp
+   websocket/base64.cpp
+   websocket/websocket_frame.cpp
+   websocket/websocket_handshake.cpp
+   websocket/websocket_connection.cpp
+   registry_send_buffer.cpp
+   custom_log_data_publisher.cpp
+   yo_variable_server.cpp
 )
 
 add_library(ihmc_robot_data_logger ${IHMC_ROBOT_DATA_LOGGER_SOURCES})
@@ -48,4 +60,4 @@ target_include_directories(ihmc_robot_data_logger PUBLIC
 
 target_compile_features(ihmc_robot_data_logger PUBLIC cxx_std_17)
 target_link_libraries(ihmc_robot_data_logger PUBLIC ihmc::yovariables nlohmann_json::nlohmann_json asio_standalone Threads::Threads)
-target_link_libraries(ihmc_robot_data_logger PRIVATE lz4_vendored)
+target_link_libraries(ihmc_robot_data_logger PRIVATE lz4_vendored sha1_vendored)
